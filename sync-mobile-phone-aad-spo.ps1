@@ -1,3 +1,7 @@
+# Powershell Script Sync Mobile Phone AAD to SPO
+# Author: Tycho Löke
+
+#Import Modules
 Import-Module MSOnline
 Import-Module Microsoft.Online.SharePoint.PowerShell
 
