@@ -1,3 +1,6 @@
+# Powershell Script Sync Mobile Phone AAD SPO
+# Author: Tycho Loke
+
 # Import Modules
 Import-Module AzureAD
 Import-Module SharePointPnPPowerShellOnline
