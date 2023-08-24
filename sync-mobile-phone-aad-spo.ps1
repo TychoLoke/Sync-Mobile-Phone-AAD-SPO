@@ -6,8 +6,8 @@ Import-Module AzureAD
 Import-Module SharePointPnPPowerShellOnline
 
 # Azure AD and SharePoint Online Connection Information
-$tenantId = "2331f3d7-9649-45d8-b4c3-63bc7c48ad7f"
-$spoAdminUrl = "https://peoplerockprep-admin.sharepoint.com/"
+$tenantId = "<tenant-id>"
+$spoAdminUrl = "https://company-admin.sharepoint.com/"
 $overwriteExistingSPOUPAValue = $true
 
 Try {
