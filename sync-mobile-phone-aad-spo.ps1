@@ -1,57 +1,38 @@
 # Import Modules
 Import-Module AzureAD
-Import-Module PnP.PowerShell
+Import-Module SharePointPnPPowerShellOnline
 
-# Add SharePoint CSOM libraries
-Add-Type -Path 'C:\Program Files\Common Files\microsoft shared\Web Server Extensions\16\ISAPI\Microsoft.SharePoint.Client.dll'
-Add-Type -Path 'C:\Program Files\Common Files\microsoft shared\Web Server Extensions\16\ISAPI\Microsoft.SharePoint.Client.Runtime.dll'
-Add-Type -Path 'C:\Program Files\Common Files\microsoft shared\Web Server Extensions\16\ISAPI\Microsoft.SharePoint.Client.UserProfiles.dll'
-
-# Defaults
-$spoAdminUrl = "https://tenant-admin.sharepoint.com"
-$overwriteExistingSPOUPAValue = $false
-
-# Get credentials of account that is AzureAD Admin and SharePoint Online Admin
-$credential = Get-Credential
+# Azure AD and SharePoint Online Connection Information
+$tenantId = "2331f3d7-9649-45d8-b4c3-63bc7c48ad7f"
+$spoAdminUrl = "https://peoplerockprep-admin.sharepoint.com/"
+$overwriteExistingSPOUPAValue = $true
 
 Try {
-    # Connect to AzureAD
-    Connect-AzureAD -Credential $credential
-
-    # Connect to SharePointOnline
-    Connect-PnPOnline -Url $spoAdminUrl -Credentials $credential
-
+    # Authenticate to Azure AD interactively
+    Connect-AzureAD -TenantId $tenantId
+    
+    # Connect to SharePoint Online (it will prompt for credentials)
+    Connect-PnPOnline -Url $spoAdminUrl -UseWebLogin
+    
     # Get all AzureAD Users
     $AzureADUsers = Get-AzureADUser -All $true
-
+    
     ForEach ($AzureADUser in $AzureADUsers) {
-
-        $mobilePhone = $AzureADUser.MobilePhone
+        $mobilePhone = $AzureADUser.Mobile
         $targetUPN = $AzureADUser.UserPrincipalName
-
-        # Check to see if the AzureAD User has a MobilePhone specified
+        
         if ($mobilePhone) {
-            # Get the existing value of the SPO User Profile Property CellPhone
-            $targetUserCellPhone = Get-PnPUserProfileProperty -Account $targetUPN -PropertyName "CellPhone"
-
-            # If target property is empty let's populate it
-            if (!$targetUserCellPhone) {
+            # Get the existing user profile properties
+            $userProfileProperties = Get-PnPUserProfileProperty -Account $targetUPN
+            # Get the current value of the CellPhone property
+            $targetUserCellPhone = $userProfileProperties.UserProfileProperties["CellPhone"]
+            
+            # If target property is empty or overwrite is allowed, then update it
+            if (!$targetUserCellPhone -or $overwriteExistingSPOUPAValue) {
                 Set-PnPUserProfileProperty -Account $targetUPN -PropertyName "CellPhone" -Value $mobilePhone
-            }
-            else {
-                # Target property is not empty
-                # Check to see if we're to overwrite existing property value
-                if ($overwriteExistingSPOUPAValue) {
-                    Set-PnPUserProfileProperty -Account $targetUPN -PropertyName "CellPhone" -Value $mobilePhone
-                }
-                else {
-                    # Not going to overwrite existing property value
-                    Write-Output "Target SPO UPA CellPhone is not empty for $targetUPN and we're to preserve existing properties"
-                }
             }
         }
         else {
-            # AzureAD User MobilePhone is empty, nothing to do here
             Write-Output "AzureAD MobilePhone Property is Null or Empty for $targetUPN"
         }
     }
@@ -59,3 +40,5 @@ Try {
 Catch {
     Write-Error $_.Exception
 }
+
+# End of script
