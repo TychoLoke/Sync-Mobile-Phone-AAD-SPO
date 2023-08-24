@@ -1,9 +1,6 @@
-# Powershell Script Sync Mobile Phone AAD to SPO
-# Author: Tycho Löke
-
-#Import Modules
-Import-Module MSOnline
-Import-Module Microsoft.Online.SharePoint.PowerShell
+# Import Modules
+Import-Module AzureAD
+Import-Module PnP.PowerShell
 
 # Add SharePoint CSOM libraries
 Add-Type -Path 'C:\Program Files\Common Files\microsoft shared\Web Server Extensions\16\ISAPI\Microsoft.SharePoint.Client.dll'
@@ -19,16 +16,13 @@ $credential = Get-Credential
 
 Try {
     # Connect to AzureAD
-    Connect-MsolService -Credential $credential
+    Connect-AzureAD -Credential $credential
 
-    # Get credentials for SharePointOnline
-    $spoCredentials = New-Object Microsoft.SharePoint.Client.SharePointOnlineCredentials($credential.UserName, $credential.Password)
-    $ctx = New-Object Microsoft.SharePoint.Client.ClientContext($spoAdminUrl)
-    $ctx.Credentials = $spoCredentials
-    $spoPeopleManager = New-Object Microsoft.SharePoint.Client.UserProfiles.PeopleManager($ctx)
+    # Connect to SharePointOnline
+    Connect-PnPOnline -Url $spoAdminUrl -Credentials $credential
 
     # Get all AzureAD Users
-    $AzureADUsers = Get-MsolUser -All
+    $AzureADUsers = Get-AzureADUser -All $true
 
     ForEach ($AzureADUser in $AzureADUsers) {
 
@@ -38,22 +32,17 @@ Try {
         # Check to see if the AzureAD User has a MobilePhone specified
         if ($mobilePhone) {
             # Get the existing value of the SPO User Profile Property CellPhone
-            $targetUserCellPhone = $spoPeopleManager.GetUserProfilePropertyFor($targetUPN, "CellPhone")
-            $ctx.ExecuteQuery()
-
-            $userCellPhone = $targetUserCellPhone.Value
+            $targetUserCellPhone = Get-PnPUserProfileProperty -Account $targetUPN -PropertyName "CellPhone"
 
             # If target property is empty let's populate it
-            if (!$userCellPhone) {
-                $spoPeopleManager.SetSingleValueProfileProperty($targetUPN, "CellPhone", $mobilePhone)
-                $ctx.ExecuteQuery()
+            if (!$targetUserCellPhone) {
+                Set-PnPUserProfileProperty -Account $targetUPN -PropertyName "CellPhone" -Value $mobilePhone
             }
             else {
                 # Target property is not empty
                 # Check to see if we're to overwrite existing property value
                 if ($overwriteExistingSPOUPAValue) {
-                    $spoPeopleManager.SetSingleValueProfileProperty($targetUPN, "CellPhone", $mobilePhone)
-                    $ctx.ExecuteQuery()
+                    Set-PnPUserProfileProperty -Account $targetUPN -PropertyName "CellPhone" -Value $mobilePhone
                 }
                 else {
                     # Not going to overwrite existing property value
