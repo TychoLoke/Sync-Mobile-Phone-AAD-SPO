@@ -8,7 +8,7 @@ param(
     [bool]$OverwriteExistingSPOUPAValue = $true
 )
 
-function Initialize-PowerShellAdminHelpers {
+function Initialize-PowerShellAdminHelper {
     $moduleName = "PowerShellAdminHelpers"
 
     if (-not (Get-Module -ListAvailable -Name $moduleName)) {
@@ -21,7 +21,7 @@ function Initialize-PowerShellAdminHelpers {
 }
 
 try {
-    Initialize-PowerShellAdminHelpers
+    Initialize-PowerShellAdminHelper
     Ensure-Module -ModuleName "Microsoft.Graph.Users"
     Ensure-Module -ModuleName "PnP.PowerShell"
     Connect-GraphWithScopes -Scopes @("User.Read.All") -TenantId $TenantId
