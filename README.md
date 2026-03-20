@@ -6,16 +6,19 @@ This script synchronizes the mobile phone number from Microsoft Entra ID to the 
 
 - SharePoint Online
 - Microsoft Entra ID
-- `Microsoft.Graph.Users` PowerShell module
-- `PnP.PowerShell` module
+- Permission to install PowerShell modules for the current user
 - Admin account with the SharePoint and service admin roles
+- Internet access the first time you run the script so it can bootstrap `PowerShellAdminHelpers`
 
 ## Setup
 
 1. Install the required modules:
    ```powershell
-   Install-Module -Name Microsoft.Graph.Users -Scope CurrentUser
-   Install-Module -Name PnP.PowerShell -Scope CurrentUser
+   Invoke-WebRequest `
+     -Uri "https://raw.githubusercontent.com/TychoLoke/powershell-admin-helpers/main/Install-PowerShellAdminHelpers.ps1" `
+     -OutFile "$env:TEMP\Install-PowerShellAdminHelpers.ps1"
+
+   & "$env:TEMP\Install-PowerShellAdminHelpers.ps1"
    ```
 2. Run the script with your tenant-specific values:
 
@@ -48,6 +51,7 @@ Please report any issues or suggestions on the repository's issue tracker.
 
 - Test the script in a non-production tenant before using it against a live directory.
 - The script uses Microsoft Graph delegated permissions and interactive PnP authentication.
+- The script installs `Microsoft.Graph.Users` and `PnP.PowerShell` automatically if they are missing.
 
 **Changelog:**
 

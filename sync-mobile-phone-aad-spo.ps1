@@ -8,24 +8,23 @@ param(
     [bool]$OverwriteExistingSPOUPAValue = $true
 )
 
-function Ensure-Module {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$ModuleName
-    )
+function Initialize-PowerShellAdminHelpers {
+    $moduleName = "PowerShellAdminHelpers"
 
-    if (-not (Get-Module -ListAvailable -Name $ModuleName)) {
-        Install-Module -Name $ModuleName -Scope CurrentUser -Force
+    if (-not (Get-Module -ListAvailable -Name $moduleName)) {
+        $installerPath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "Install-PowerShellAdminHelpers.ps1"
+        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/TychoLoke/powershell-admin-helpers/main/Install-PowerShellAdminHelpers.ps1" -OutFile $installerPath
+        & $installerPath
     }
 
-    Import-Module $ModuleName -ErrorAction Stop
+    Import-Module -Name $moduleName -Force -ErrorAction Stop
 }
 
 try {
+    Initialize-PowerShellAdminHelpers
     Ensure-Module -ModuleName "Microsoft.Graph.Users"
     Ensure-Module -ModuleName "PnP.PowerShell"
-
-    Connect-MgGraph -TenantId $TenantId -Scopes @("User.Read.All") -NoWelcome
+    Connect-GraphWithScopes -Scopes @("User.Read.All") -TenantId $TenantId
     Connect-PnPOnline -Url $SpoAdminUrl -Interactive
 
     $entraUsers = Get-MgUser -All -Property "displayName,userPrincipalName,mobilePhone"
@@ -56,6 +55,8 @@ catch {
     exit 1
 }
 finally {
-    Disconnect-MgGraph | Out-Null
+    if (Get-MgContext) {
+        Disconnect-MgGraph | Out-Null
+    }
     Disconnect-PnPOnline -ErrorAction SilentlyContinue
 }
