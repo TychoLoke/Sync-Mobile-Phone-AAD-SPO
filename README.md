@@ -8,7 +8,7 @@ This script is used to synchronize the mobile phone number from Azure AD to Shar
 - Azure AD
 - SharePointPnPPowerShellOnline Module
 - AzureAD PowerShell Module
-- Admin Account with the SharePoint and Service Admin role (NO MFA)
+- Admin account with the SharePoint and service admin roles
 
 ## Setup
 
@@ -39,6 +39,11 @@ This script is used to synchronize the mobile phone number from Azure AD to Shar
 If you encounter any issues, check the error message and the PowerShell console for more details.
 
 Please report any issues or suggestions on the repository's issue tracker.
+
+## Notes
+
+- This repository currently uses the legacy `AzureAD` and `SharePointPnPPowerShellOnline` modules because that is what the script was originally built around.
+- Test the script in a non-production tenant before using it against a live directory.
 
 **Changelog:**
 
