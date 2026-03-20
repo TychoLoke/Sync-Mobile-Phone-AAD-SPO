@@ -1,47 +1,61 @@
-# Powershell Script Sync Mobile Phone AAD SPO
-# Author: Tycho Loke
+param(
+    [Parameter(Mandatory = $true)]
+    [string]$TenantId,
 
-# Import Modules
-Import-Module AzureAD
-Import-Module SharePointPnPPowerShellOnline
+    [Parameter(Mandatory = $true)]
+    [string]$SpoAdminUrl,
 
-# Azure AD and SharePoint Online Connection Information
-$tenantId = "<tenant-id>"
-$spoAdminUrl = "https://company-admin.sharepoint.com/"
-$overwriteExistingSPOUPAValue = $true
+    [bool]$OverwriteExistingSPOUPAValue = $true
+)
 
-Try {
-    # Authenticate to Azure AD interactively
-    Connect-AzureAD -TenantId $tenantId
-    
-    # Connect to SharePoint Online (it will prompt for credentials)
-    Connect-PnPOnline -Url $spoAdminUrl -UseWebLogin
-    
-    # Get all AzureAD Users
-    $AzureADUsers = Get-AzureADUser -All $true
-    
-    ForEach ($AzureADUser in $AzureADUsers) {
-        $mobilePhone = $AzureADUser.Mobile
-        $targetUPN = $AzureADUser.UserPrincipalName
-        
-        if ($mobilePhone) {
-            # Get the existing user profile properties
-            $userProfileProperties = Get-PnPUserProfileProperty -Account $targetUPN
-            # Get the current value of the CellPhone property
-            $targetUserCellPhone = $userProfileProperties.UserProfileProperties["CellPhone"]
-            
-            # If target property is empty or overwrite is allowed, then update it
-            if (!$targetUserCellPhone -or $overwriteExistingSPOUPAValue) {
-                Set-PnPUserProfileProperty -Account $targetUPN -PropertyName "CellPhone" -Value $mobilePhone
-            }
+function Ensure-Module {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ModuleName
+    )
+
+    if (-not (Get-Module -ListAvailable -Name $ModuleName)) {
+        Install-Module -Name $ModuleName -Scope CurrentUser -Force
+    }
+
+    Import-Module $ModuleName -ErrorAction Stop
+}
+
+try {
+    Ensure-Module -ModuleName "Microsoft.Graph.Users"
+    Ensure-Module -ModuleName "PnP.PowerShell"
+
+    Connect-MgGraph -TenantId $TenantId -Scopes @("User.Read.All") -NoWelcome
+    Connect-PnPOnline -Url $SpoAdminUrl -Interactive
+
+    $entraUsers = Get-MgUser -All -Property "displayName,userPrincipalName,mobilePhone"
+
+    foreach ($entraUser in $entraUsers) {
+        $mobilePhone = $entraUser.MobilePhone
+        $targetUPN = $entraUser.UserPrincipalName
+
+        if (-not $targetUPN) {
+            continue
         }
-        else {
-            Write-Output "AzureAD MobilePhone Property is Null or Empty for $targetUPN"
+
+        if ($mobilePhone) {
+            $userProfileProperties = Get-PnPUserProfileProperty -Account $targetUPN
+            $targetUserCellPhone = $userProfileProperties.UserProfileProperties["CellPhone"]
+
+            if (-not $targetUserCellPhone -or $OverwriteExistingSPOUPAValue) {
+                Set-PnPUserProfileProperty -Account $targetUPN -PropertyName "CellPhone" -Value $mobilePhone
+                Write-Output "Updated CellPhone for $targetUPN"
+            }
+        } else {
+            Write-Output "Mobile phone is null or empty for $targetUPN"
         }
     }
 }
-Catch {
-    Write-Error $_.Exception
+catch {
+    Write-Error $_.Exception.Message
+    exit 1
 }
-
-# End of script
+finally {
+    Disconnect-MgGraph | Out-Null
+    Disconnect-PnPOnline -ErrorAction SilentlyContinue
+}

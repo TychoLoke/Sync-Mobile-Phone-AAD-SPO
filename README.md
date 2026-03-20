@@ -1,37 +1,41 @@
-# Sync Mobile Phone from Azure Active Directory to SharePoint Online using PowerShell
+# Sync Mobile Phone from Microsoft Entra ID to SharePoint Online using PowerShell
 
-This script is used to synchronize the mobile phone number from Azure AD to SharePoint Online user profile property. It imports the AzureAD and SharePointPnPPowerShellOnline modules, connects to Azure AD and SharePoint Online, and updates user profile properties based on mobile phone information from Azure AD.
+This script synchronizes the mobile phone number from Microsoft Entra ID to the SharePoint Online user profile property. It uses Microsoft Graph for user data and `PnP.PowerShell` for SharePoint profile updates.
 
 ## Requirements
 
-- Sharepoint Online
-- Azure AD
-- SharePointPnPPowerShellOnline Module
-- AzureAD PowerShell Module
+- SharePoint Online
+- Microsoft Entra ID
+- `Microsoft.Graph.Users` PowerShell module
+- `PnP.PowerShell` module
 - Admin account with the SharePoint and service admin roles
 
 ## Setup
 
-1. Install the SharePointPnPPowerShellOnline and AzureAD modules:
+1. Install the required modules:
    ```powershell
-   Install-Module -Name SharePointPnPPowerShellOnline
-   Install-Module -Name AzureAD
-2. Update the following variables in the script:
-- `$tenantId`: Replace with your Azure AD tenant ID.
-- `$spoAdminUrl`: Replace with the SharePoint Online admin center URL of your tenant.
-- `$overwriteExistingSPOUPAValue`: Set to `$true` if you want to overwrite existing SharePoint Online user profile property values.
-3. Run the script.
+   Install-Module -Name Microsoft.Graph.Users -Scope CurrentUser
+   Install-Module -Name PnP.PowerShell -Scope CurrentUser
+   ```
+2. Run the script with your tenant-specific values:
+
+   ```powershell
+   .\sync-mobile-phone-aad-spo.ps1 `
+     -TenantId "<tenant-id>" `
+     -SpoAdminUrl "https://contoso-admin.sharepoint.com" `
+     -OverwriteExistingSPOUPAValue $true
+   ```
 
 **Usage:**
 
-1. Run the script with PowerShell with Admin Rights.
-2. You will be prompted to authenticate to Azure AD interactively.
+1. Run the script from an elevated PowerShell session.
+2. You will be prompted to authenticate to Microsoft Graph interactively.
 3. You will be prompted to log in to SharePoint Online.
-4. The script will then synchronize the mobile phone number from Azure AD to SharePoint Online user profile property for all users.
+4. The script will then synchronize the mobile phone number from Entra ID to the SharePoint Online user profile property for all users.
 
 **Notes:**
 
-- If the Azure AD user's mobile phone number is not specified, the script will skip that user and print a message to the console.
+- If the Entra ID user's mobile phone number is not specified, the script will skip that user and print a message to the console.
 - By default, the script does not overwrite existing SharePoint Online user profile property values. If you want to overwrite existing values, set the `$overwriteExistingSPOUPAValue` variable to `$true`.
 
 **Troubleshooting:**
@@ -42,13 +46,14 @@ Please report any issues or suggestions on the repository's issue tracker.
 
 ## Notes
 
-- This repository currently uses the legacy `AzureAD` and `SharePointPnPPowerShellOnline` modules because that is what the script was originally built around.
 - Test the script in a non-production tenant before using it against a live directory.
+- The script uses Microsoft Graph delegated permissions and interactive PnP authentication.
 
 **Changelog:**
 
-- **Version 2.0.0 (Latest)**
-  - Completely revised script to use AzureAD and SharePointPnPPowerShellOnline modules for better compatibility and ease of use.
+- **Version 2.1.0 (Latest)**
+  - Updated to use Microsoft Graph and `PnP.PowerShell`.
+  - Replaced legacy AzureAD and `SharePointPnPPowerShellOnline` module usage.
 
 - **Version 1.0.0**
   - Initial release.
